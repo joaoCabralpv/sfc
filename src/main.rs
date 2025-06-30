@@ -1,38 +1,34 @@
+use crate::screen::VRAMSIZE;
+
 mod screen;
 
-use minifb::{Key, ScaleMode, Window, WindowOptions};
-
-const WIDTH: usize = 256;
-const HEIGHT: usize = 192;
 
 fn main() {
-    let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
-    let mut opt = WindowOptions::default();
-    opt.resize=true;
-    opt.scale_mode=ScaleMode::AspectRatioStretch;
-    let mut window = Window::new(
-        "SFC",
-        WIDTH,
-        HEIGHT,
-        opt,
-    )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
 
-    // Limit to max ~60 fps update rate
-    window.set_target_fps(30);
+    //let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
+    
+    let mut memory :Box<[u8]>= Box::new([0; 524288]);
 
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        let mut c = 0;
-        for i in buffer.iter_mut() {
-            *i = c%5*0x10FF5D; // write something more funny here!
-            c+=1
+    let mut window = screen::init_window();
+
+
+    memory[0]=0x01;
+    memory[1]=0x23;
+    memory[2]=0x34;
+    memory[3]=0x56;
+    memory[4]=0x78;
+    memory[5]=0x89;
+    memory[6]=0xAB;
+    memory[7]=0xCD;
+    memory[8]=0xEF;
+
+    for i in 0..VRAMSIZE {
+        memory[i]=memory[i%9];
+    }
+
+    while window.is_open(){
+            screen::display(&mut window, &memory);
         }
 
-        // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
-        window
-            .update_with_buffer(&buffer, WIDTH, HEIGHT)
-            .unwrap();
+
     }
-}
